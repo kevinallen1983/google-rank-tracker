@@ -1,0 +1,25 @@
+{
+  "domain": "your-domain.com",
+  "provider": "serper",
+  "fallback_providers": [],
+  "providers": {
+    "serper": {
+      "endpoint": "https://google.serper.dev/search",
+      "api_key": ""
+    },
+    "serpbase": {
+      "endpoint": "https://api.serpbase.dev/google/search",
+      "api_key": ""
+    }
+  },
+  "keywords": [
+    "custom inflatable tent",
+    "inflatable advertising tent"
+  ],
+  "serp": {
+    "hl": "en",
+    "gl": "us",
+    "device": "default",
+    "max_pages": 5
+  }
+}

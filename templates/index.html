@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Google 排名监控</title>
+<link rel="icon" type="image/x-icon" href="/assets/icon.ico">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js?v=2"></script>
+<style>
+  :root{
+    --blue:#018ADE; --orange:#FF9F08; --navy:#0D2241;
+    --bg:#F6F7F9; --card:#FFFFFF; --line:#E6E9EF; --muted:#6B7686;
+    --green:#1F9D55; --red:#D64545; --text:#0D2241;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 60px}
+  header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+  h1{font-size:22px;margin:0;font-weight:700;letter-spacing:.5px}
+  h1 .dot{color:var(--blue)}
+  .domain-badge{font-size:13px;color:var(--muted);background:var(--card);border:1px solid var(--line);
+    padding:5px 12px;border-radius:20px}
+  .domain-badge b{color:var(--navy)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:18px;
+    box-shadow:0 1px 2px rgba(13,34,65,.04)}
+  .card h2{font-size:15px;margin:0 0 14px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .card h2::before{content:"";width:4px;height:16px;background:var(--blue);border-radius:2px;display:inline-block}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+  input,select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:14px;
+    color:var(--text);background:#fff;outline:none}
+  input:focus,select:focus{border-color:var(--blue)}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .row>*{flex:1;min-width:120px}
+  button{cursor:pointer;border:none;border-radius:8px;font-size:14px;font-weight:600;padding:10px 16px;transition:.15s}
+  .btn-primary{background:var(--blue);color:#fff}
+  .btn-primary:hover{background:#0176bd}
+  .btn-ghost{background:#fff;color:var(--navy);border:1px solid var(--line)}
+  .btn-ghost:hover{background:#f0f3f7}
+  .btn-sm{padding:6px 12px;font-size:13px}
+  .kw-add{display:flex;gap:10px;margin-bottom:12px;align-items:flex-start}
+  .kw-add textarea{flex:1;resize:vertical;min-height:64px;font-family:inherit;width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:14px;color:var(--text);background:#fff;outline:none;line-height:1.5}
+  .kw-add textarea:focus{border-color:var(--blue)}
+  .kw-list{list-style:none;margin:0;padding:0;max-height:260px;overflow:auto}
+  .kw-list li{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border:1px solid var(--line);
+    border-radius:8px;margin-bottom:8px;background:#fff}
+  .kw-list .idx{color:var(--muted);font-size:12px;margin-right:8px}
+  .kw-actions{display:flex;gap:6px;align-items:center}
+  .kw-check{background:var(--blue);color:#fff;padding:4px 10px;font-size:12px}
+  .kw-check:hover{background:#0176bd}
+  .kw-check:disabled{background:#9bc7e6;cursor:not-allowed}
+  .kw-del{background:#fff;color:var(--red);border:1px solid #f0d3d3;padding:4px 10px;font-size:12px}
+  .kw-del:hover{background:#fdf0f0}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+  td.pos{font-weight:700;font-size:15px}
+  .up{color:var(--green)} .down{color:var(--red)} .flat{color:var(--muted)} .na{color:var(--muted)}
+  .pill{display:inline-block;padding:2px 9px;border-radius:12px;font-size:12px;font-weight:600}
+  .pill.green{background:#e7f6ee;color:var(--green)} .pill.red{background:#fbeaea;color:var(--red)}
+  .pill.gray{background:#eef1f5;color:var(--muted)}
+  .status{font-size:13px;color:var(--muted);min-height:20px;margin-top:10px}
+  .status.err{color:var(--red)}
+  .chart-box{position:relative;height:320px}
+  .hint{font-size:12px;color:var(--muted);margin-top:6px}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .spinner{display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;
+    border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .empty{color:var(--muted);text-align:center;padding:24px;font-size:13px}
+  code{background:#f0f3f7;padding:2px 6px;border-radius:5px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Google 排名监控<span class="dot">.</span></h1>
+    <div class="domain-badge">监控域名：<b id="domBadge">—</b></div>
+  </header>
+
+  <div class="grid2">
+    <!-- 配置 -->
+    <div class="card">
+      <h2>基础配置</h2>
+      <label>你的网站域名</label>
+      <input id="domain" placeholder="例如 kcce-event.com">
+      <label>数据源</label>
+      <select id="provider" onchange="onProviderChange()">
+        <option value="serper">Serper.dev（推荐，2500 免费积分）</option>
+        <option value="serpbase">SerpBase（仅 100 免费积分，慎用）</option>
+      </select>
+      <label id="apikeyLabel">Serper API Key</label>
+      <input id="apikey" type="password" placeholder="在对应官网注册后获取">
+      <div class="row">
+        <div>
+          <label>目标国家 (gl)</label>
+          <select id="gl">
+            <option value="us">美国 us</option>
+            <option value="uk">英国 uk</option>
+            <option value="ca">加拿大 ca</option>
+            <option value="au">澳大利亚 au</option>
+            <option value="de">德国 de</option>
+            <option value="fr">法国 fr</option>
+            <option value="es">西班牙 es</option>
+            <option value="it">意大利 it</option>
+            <option value="nl">荷兰 nl</option>
+            <option value="br">巴西 br</option>
+            <option value="jp">日本 jp</option>
+            <option value="ae">阿联酋 ae</option>
+            <option value="sa">沙特 sa</option>
+            <option value="in">印度 in</option>
+            <option value="mx">墨西哥 mx</option>
+            <option value="za">南非 za</option>
+          </select>
+        </div>
+        <div>
+          <label>界面语言 (hl)</label>
+          <select id="hl">
+            <option value="en">英语 en</option>
+            <option value="en-gb">英语(英) en-gb</option>
+            <option value="de">德语 de</option>
+            <option value="fr">法语 fr</option>
+            <option value="es">西班牙语 es</option>
+            <option value="pt">葡萄牙语 pt</option>
+            <option value="pt-br">葡语(巴西) pt-br</option>
+            <option value="nl">荷兰语 nl</option>
+            <option value="it">意大利语 it</option>
+            <option value="ru">俄语 ru</option>
+            <option value="ar">阿拉伯语 ar</option>
+            <option value="ja">日语 ja</option>
+            <option value="zh-cn">中文(简) zh-cn</option>
+            <option value="zh-tw">中文(繁) zh-tw</option>
+          </select>
+        </div>
+      </div>
+      <label>检查深度（每页约 10 条，翻页越多查得越深）</label>
+      <select id="max_pages">
+        <option value="1">前 1 页（约前 10 名）</option>
+        <option value="2">前 2 页（约前 20 名）</option>
+        <option value="3">前 3 页（约前 30 名）</option>
+        <option value="5" selected>前 5 页（约前 50 名）</option>
+        <option value="10">前 10 页（约前 100 名）</option>
+      </select>
+      <div class="hint" id="creditsHint" style="color:#c2410c">SerpBase 每翻 1 页扣 1 积分；前 10 页 = 每个关键词扣 10 积分。建议日常用 Serper。</div>
+      <div class="toolbar" style="margin-top:16px">
+        <button class="btn-primary" onclick="saveConfig()">保存配置</button>
+      </div>
+      <div class="status" id="cfgStatus"></div>
+    </div>
+
+    <!-- 关键词 -->
+    <div class="card">
+      <h2>监控关键词</h2>
+      <div class="kw-add">
+        <textarea id="kwInput" rows="3" placeholder="每行一个关键词，或用逗号/分号分隔。例如：&#10;custom inflatable tent&#10;inflatable advertising tent"></textarea>
+        <button class="btn-primary btn-sm" onclick="addKw()">添加</button>
+      </div>
+      <ul class="kw-list" id="kwList"></ul>
+      <div class="hint" id="kwHint">提示：先添加你最关心的 10~20 个核心词。支持一次粘贴多行批量添加（换行、逗号、分号分隔均可）。</div>
+    </div>
+  </div>
+
+  <!-- 操作 -->
+  <div class="card">
+    <h2>立即检查</h2>
+    <div class="toolbar">
+      <button class="btn-primary" id="checkBtn" onclick="runCheck()">立即检查全部</button>
+      <button class="btn-ghost" onclick="loadDemo()">生成演示数据</button>
+      <button class="btn-ghost btn-sm" onclick="clearDemo()">清空演示数据</button>
+    </div>
+    <div class="status" id="checkStatus">尚未检查。配置好 Key 后点“立即检查全部”，或在右侧关键词列表 / 下方概览中点“检查”单独查一个词。</div>
+    <div class="status" id="singleStatus"></div>
+  </div>
+
+  <!-- 概览 -->
+  <div class="card">
+    <h2>最新排名概览</h2>
+    <div class="toolbar">
+      <button class="btn-ghost btn-sm" onclick="exportOverview()">导出 CSV</button>
+      <label class="btn-ghost btn-sm" style="cursor:pointer;margin:0">
+        导入 CSV
+        <input type="file" accept=".csv" style="display:none" onchange="importCSV(this)">
+      </label>
+      <span class="hint" id="exportHint">导出为 Excel 可直接打开的 CSV 文件（含 BOM，中文不乱码）。</span>
+    </div>
+    <div id="overviewEmpty" class="empty">暂无数据，请先检查或生成演示数据。</div>
+    <table id="overviewTable" style="display:none">
+      <thead><tr><th>关键词</th><th>最新排名</th><th>较上次</th><th>最近检查</th><th>落地页</th><th>操作</th></tr></thead>
+      <tbody id="overviewBody"></tbody>
+    </table>
+  </div>
+
+  <!-- 趋势 -->
+  <div class="card">
+    <h2>排名趋势</h2>
+    <div class="toolbar">
+      <select id="trendKw" onchange="drawTrend()" style="max-width:320px"></select>
+      <select id="trendDays" onchange="drawTrend()" title="限制趋势图横轴显示的天数">
+        <option value="0">全部日期</option>
+        <option value="7">最近 7 天</option>
+        <option value="14">最近 14 天</option>
+        <option value="30">最近 30 天</option>
+        <option value="90">最近 90 天</option>
+      </select>
+    </div>
+    <div class="chart-box"><canvas id="trendChart"></canvas></div>
+    <div class="hint">纵轴为谷歌排名（第 1 名在顶部），曲线越靠上越好。空白表示当天未进入所查页数。</div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let chart;
+
+function getProviderKey(c, provider){
+  const providers = c.providers || {};
+  const prov = providers[provider] || {};
+  return prov.api_key || c.api_key || '';
+}
+
+async function loadConfig(){
+  const r = await fetch('/api/config'); const c = await r.json();
+  const provider = c.provider||'serper';
+  $('domain').value = c.domain||'';
+  $('provider').value = provider;
+  $('apikey').value = getProviderKey(c, provider);
+  $('gl').value = (c.serp&&c.serp.gl)||'us';
+  $('hl').value = (c.serp&&c.serp.hl)||'en';
+  $('max_pages').value = String((c.serp&&c.serp.max_pages)||5);
+  $('domBadge').textContent = c.domain||'未设置';
+  onProviderChange();
+}
+
+async function onProviderChange(){
+  const p = $('provider').value;
+  $('apikeyLabel').textContent = p==='serper' ? 'Serper API Key' : 'SerpBase API Key';
+  $('apikey').placeholder = p==='serper' ? '在 serper.dev 注册后获取' : '在 serpbase.dev 注册后获取';
+  // 关键修复：切换 provider 时，立即从服务端读取该 provider 已保存的 key，
+  // 避免输入框里残留上一个 provider 的 key 导致保存时把另一个 key 覆盖掉。
+  try{
+    const r = await fetch('/api/config');
+    const c = await r.json();
+    $('apikey').value = getProviderKey(c, p);
+  }catch(e){ console.warn('读取 provider key 失败', e); }
+}
+
+async function saveConfig(){
+  const apiKey = $('apikey').value.trim();
+  const body = {
+    domain:$('domain').value.trim(),
+    provider:$('provider').value,
+    gl:$('gl').value, hl:$('hl').value,
+    max_pages:parseInt($('max_pages').value,10)
+  };
+  // 如果 key 输入框为空，就不发送 api_key，避免后端把已保存的 key 清空。
+  if(apiKey){ body.api_key = apiKey; }
+  const r = await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const j = await r.json();
+  if(j.ok){ $('cfgStatus').textContent='配置已保存。'; $('cfgStatus').className='status';
+    $('domBadge').textContent=body.domain||'未设置'; }
+  else { $('cfgStatus').textContent='保存失败：'+(j.msg||''); $('cfgStatus').className='status err'; }
+}
+
+async function loadKeywords(){
+  const r = await fetch('/api/keywords'); const list = await r.json();
+  const ul = $('kwList'); ul.innerHTML='';
+  list.forEach((kw,i)=>{
+    const li=document.createElement('li');
+    li.innerHTML=`<span><span class="idx">${i+1}</span>${kw}</span>`;
+    const actions=document.createElement('div'); actions.className='kw-actions';
+    const checkBtn=document.createElement('button'); checkBtn.className='kw-check'; checkBtn.textContent='检查';
+    checkBtn.onclick=()=>checkSingleKw(kw, checkBtn);
+    const delBtn=document.createElement('button'); delBtn.className='kw-del'; delBtn.textContent='删除';
+    delBtn.onclick=()=>delKw(kw);
+    actions.appendChild(checkBtn); actions.appendChild(delBtn);
+    li.appendChild(actions); ul.appendChild(li);
+  });
+}
+
+async function addKw(){
+  const raw=$('kwInput').value;
+  if(!raw.trim())return;
+  // 按换行 / 逗号 / 分号 / 制表符拆分，过滤空行，自动去重
+  const parts=raw.split(/[\n\r,;，；\t]+/).map(s=>s.trim()).filter(Boolean);
+  if(!parts.length)return;
+  const r=await fetch('/api/keywords/batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keywords:parts})});
+  const j=await r.json();
+  if(j.ok){ $('kwInput').value=''; await loadKeywords(); await refreshTrendOptions();
+    if(j.added>0) $('kwHint').textContent='已添加 '+j.added+' 个关键词（共收到 '+j.received+' 个，已存在的自动跳过）。';
+  }
+  else { $('kwHint').textContent='添加失败，请重试。'; }
+}
+
+async function delKw(kw){
+  await fetch('/api/keywords',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({keyword:kw})});
+  await loadKeywords(); await refreshTrendOptions(); await loadOverview();
+}
+
+async function runCheck(){
+  const btn=$('checkBtn'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>检查中…';
+  $('checkStatus').textContent='正在逐个查询谷歌排名，请稍候…'; $('checkStatus').className='status';
+  try{
+    const r=await fetch('/api/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+    const j=await r.json();
+    if(!j.ok){ $('checkStatus').textContent='检查失败：'+(j.msg||'未知错误'); $('checkStatus').className='status err'; }
+    else{
+      const lines=j.results.map(x=> x.ok
+        ? `${x.keyword}：${x.position?('第 '+x.position+' 名'):'未上榜'}`
+        : `${x.keyword}：失败(${x.error||''})`);
+      $('checkStatus').textContent='检查完成（'+j.checked_at+'）\n'+lines.join('\n');
+      $('checkStatus').style.whiteSpace='pre-line';
+    }
+  }catch(e){ $('checkStatus').textContent='请求出错：'+e; $('checkStatus').className='status err'; }
+  btn.disabled=false; btn.textContent='立即检查全部';
+  await loadOverview(); await refreshTrendOptions();
+}
+
+async function checkSingleKw(kw, btn){
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
+  const s=$('singleStatus'); s.textContent='正在查「'+kw+'」…'; s.className='status';
+  try{
+    const r=await fetch('/api/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keyword:kw})});
+    const j=await r.json();
+    if(!j.ok){ s.textContent='「'+kw+'」检查失败：'+(j.msg||'未知错误'); s.className='status err'; }
+    else{
+      const x=j.results[0];
+      const txt = x.ok
+        ? (x.position ? ('第 '+x.position+' 名') : '未上榜')
+        : ('失败('+(x.error||'')+')');
+      s.textContent='「'+kw+'」'+txt+'（'+j.checked_at+'）';
+      s.className='status';
+    }
+  }catch(e){ s.textContent='「'+kw+'」请求出错：'+e; s.className='status err'; }
+  finally{ btn.disabled=false; btn.textContent='检查'; }
+  await loadOverview(); await refreshTrendOptions();
+}
+
+async function loadDemo(){
+  await fetch('/api/demo',{method:'POST'});
+  $('checkStatus').textContent='已生成 30 天演示数据，可查看看板效果（真实数据需配置 API Key）。演示数据的 URL 为占位示例，带「演示」标签。';
+  await loadOverview(); await refreshTrendOptions();
+}
+
+async function clearDemo(){
+  if(!confirm('确定清空所有「演示数据」吗？真实检查的数据会保留。')) return;
+  const r=await fetch('/api/clear-demo',{method:'POST'});
+  const j=await r.json();
+  if(j.ok){
+    $('checkStatus').textContent='已清空演示数据（共 '+j.deleted+' 条）。真实排名数据不受影响。';
+  } else {
+    $('checkStatus').textContent='清空失败：'+(j.msg||'未知错误');
+  }
+  await loadOverview(); await refreshTrendOptions();
+}
+
+async function loadOverview(){
+  const r=await fetch('/api/overview'); const rows=await r.json();
+  const body=$('overviewBody'); body.innerHTML='';
+  if(!rows.length){ $('overviewEmpty').style.display='block'; $('overviewTable').style.display='none'; return; }
+  $('overviewEmpty').style.display='none'; $('overviewTable').style.display='table';
+  rows.forEach(row=>{
+    const tr=document.createElement('tr');
+    let posHtml, chgHtml;
+    if(row.position==null){ posHtml='<span class="na">未上榜</span>'; chgHtml='<span class="na">—</span>'; }
+    else{
+      posHtml=`<span class="pos">#${Math.round(row.position)}</span>`;
+      if(row.change==null){ chgHtml='<span class="pill gray">新</span>'; }
+      else if(row.change>0){ chgHtml=`<span class="up">↑${row.change}</span>`; }
+      else if(row.change<0){ chgHtml=`<span class="down">↓${Math.abs(row.change)}</span>`; }
+      else { chgHtml='<span class="flat">—</span>'; }
+    }
+    let urlHtml;
+    if(!row.url){ urlHtml='—'; }
+    else{
+      const demoTag = row.is_demo ? ' <span class="pill gray">演示</span>' : '';
+      urlHtml=`<a href="${row.url}" target="_blank" style="color:#018ADE">打开</a>${demoTag}`;
+    }
+    tr.innerHTML=`<td>${row.keyword}</td><td>${posHtml}</td><td>${chgHtml}</td>
+      <td>${row.checked_at||row.day||'—'}</td><td>${urlHtml}</td>`;
+    const tdAction=document.createElement('td'); tdAction.className='kw-actions';
+    const checkBtn=document.createElement('button'); checkBtn.className='btn-primary btn-sm'; checkBtn.textContent='检查';
+    checkBtn.onclick=()=>checkSingleKw(row.keyword, checkBtn);
+    tdAction.appendChild(checkBtn);
+    const delBtn=document.createElement('button'); delBtn.className='kw-del'; delBtn.textContent='删除';
+    delBtn.onclick=()=>delKw(row.keyword);
+    tdAction.appendChild(delBtn);
+    tr.appendChild(tdAction);
+    body.appendChild(tr);
+  });
+}
+
+async function refreshTrendOptions(){
+  const r=await fetch('/api/keywords'); const list=await r.json();
+  const sel=$('trendKw'); const cur=sel.value;
+  sel.innerHTML=''; list.forEach(kw=>{ const o=document.createElement('option'); o.value=kw; o.textContent=kw; sel.appendChild(o); });
+  if(cur) sel.value=cur;
+  if(list.length) drawTrend(); else if(chart){ chart.destroy(); chart=null; }
+}
+
+function exportOverview(){
+  // 通过隐藏 iframe 触发下载，页面不跳转；浏览器版与桌面版均可用。
+  const hint=$('exportHint');
+  hint.textContent='正在导出…';
+  const iframe=document.createElement('iframe');
+  iframe.style.display='none';
+  iframe.src='/api/export';
+  document.body.appendChild(iframe);
+  setTimeout(()=>{
+    if(iframe.parentNode) iframe.parentNode.removeChild(iframe);
+    hint.textContent='已导出（文件保存在浏览器的下载目录）。可回到本页面点击「导入 CSV」重新导入。';
+  }, 4000);
+}
+
+async function importCSV(input){
+  const file = input.files && input.files[0];
+  if(!file){ return; }
+  const hint=$('exportHint');
+  hint.textContent='正在导入…';
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const r = await fetch('/api/import', {method:'POST', body:fd});
+    const j = await r.json();
+    if(j.ok){
+      hint.textContent=`导入成功：${j.inserted} 条，${j.skipped} 条跳过。`;
+      await loadOverview(); await refreshTrendOptions();
+    } else {
+      hint.textContent='导入失败：'+(j.msg||'未知错误');
+      hint.style.color='#c2410c';
+    }
+  } catch(e){
+    hint.textContent='请求出错：'+e;
+    hint.style.color='#c2410c';
+  }
+  // 清空 input，允许重复导入同一文件
+  input.value='';
+}
+
+async function drawTrend(){
+  const kw=$('trendKw').value; if(!kw)return;
+  const days=parseInt($('trendDays').value||'0',10);
+  let url='/api/history?keyword='+encodeURIComponent(kw);
+  if(days>0) url+='&days='+days;
+  const r=await fetch(url); const hist=await r.json();
+  const labels=hist.map(h=>h.day);
+  const data=hist.map(h=>h.position);  // null 表示未上榜
+  if(chart) chart.destroy();
+  const ctx=$('trendChart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: kw + ' 排名',
+        data,
+        borderColor: '#018ADE',
+        backgroundColor: 'rgba(1,138,222,.08)',
+        fill: true,
+        tension: .25,
+        spanGaps: false,
+        pointRadius: 3,
+        pointBackgroundColor: '#018ADE'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true },
+        tooltip: {
+          callbacks: {
+            label: c => c.parsed.y == null ? '未上榜' : ('第 ' + Math.round(c.parsed.y) + ' 名')
+          }
+        },
+        title: { display: true, text: '纵轴：谷歌排名（越靠上越好）' }
+      },
+      scales: {
+        y: {
+          reverse: true,
+          title: { display: true, text: '排名' },
+          ticks: { callback: v => '#' + Math.round(v) }
+        },
+        x: {
+          title: { display: true, text: '日期' }
+        }
+      }
+    }
+  });
+}
+
+(async function init(){
+  await loadConfig(); await loadKeywords(); await loadOverview(); await refreshTrendOptions();
+})();
+</script>
+</body>
+</html>

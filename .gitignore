@@ -1,0 +1,35 @@
+# ===== Python =====
+__pycache__/
+*.pyc
+venv/
+.venv/
+env/
+
+# ===== PyInstaller 构建产物（含打包好的 exe / 真实 config / 用户数据） =====
+build/
+build_icon/
+build_icon_desktop/
+dist/
+dist_icon/
+*.spec.bak
+
+# ===== 密钥与用户数据：绝不入库 =====
+# 你的 SerpBase / Serper API Key、域名、关键词只存在本地的 config.json，已被忽略。
+# 仓库只保留 config.example.json（不含任何密钥）。
+config.json
+rank.db
+*.db
+*.db.bak
+
+# ===== 日志 =====
+*.log
+
+# ===== 本地零碎 / 诊断产物 =====
+FIXES_*.md
+*_result.txt
+result.txt
+弹出权限请求时点是*
+
+# ===== 系统 =====
+Thumbs.db
+.DS_Store
