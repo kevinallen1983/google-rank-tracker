@@ -324,40 +324,34 @@ def check_rank(keyword, domain=None, provider=None, max_results=100, max_pages=N
                     last_error = f"[{pname}] No organic results returned"
                 continue
         else:
-            # 第一步：尝试一次性抓取 max_results 条
-            ok, data, raw = prov.request(keyword, extra={"num": max_results})
-            if not ok:
-                last_error = f"[{pname}] {data}"
+            # Serper：按 page 逐页抓取（每页 10 条），命中即停，避免浪费积分。
+            # 一次性 num=50 的请求与后续 num=10/page 的翻页容易重叠且行为不可预测，
+            # 因此采用固定 page size 的串行翻页。
+            page = 1
+            seen_links = set()
+            request_failed = False
+            while page <= max_pages:
+                ok, data, _ = prov.request(keyword, extra={"num": 10, "page": page})
+                if not ok:
+                    last_error = f"[{pname}] {data}"
+                    request_failed = True
+                    break
+                page_organic = prov.parse_organic(data)
+                if not page_organic:
+                    break
+                new_items = [it for it in page_organic if it.get("link") and it.get("link") not in seen_links]
+                if not new_items:
+                    break
+                organic.extend(new_items)
+                seen_links.update(it.get("link") for it in new_items)
+                # 命中即停：翻页过程中找到目标域名，立即停止
+                if _find_hit(organic)[0]:
+                    break
+                page += 1
+            if request_failed or not organic:
+                if not last_error:
+                    last_error = f"[{pname}] No organic results returned"
                 continue
-
-            organic = prov.parse_organic(data)
-
-            # 命中即停：第一页就找到目标域名，直接返回，不再继续翻页
-            if _find_hit(organic)[0]:
-                return _build_result(organic)
-
-            # 第二步：如果结果不足 max_results，用 page 翻页补足
-            # （ Serper 免费版可能只返回 ~10 条，但支持 page 翻页 ）
-            # 严格控制 page <= max_pages：用户选"前 2 页"就只请求第 1、2 页。
-            if 0 < len(organic) < max_results and len(organic) < 100:
-                page = 2
-                seen_links = {it.get("link") for it in organic}
-                while len(organic) < max_results and page <= max_pages:
-                    ok2, data2, _ = prov.request(keyword, extra={"num": 10, "page": page})
-                    if not ok2:
-                        break
-                    page_organic = prov.parse_organic(data2)
-                    if not page_organic:
-                        break
-                    new_items = [it for it in page_organic if it.get("link") and it.get("link") not in seen_links]
-                    if not new_items:
-                        break
-                    organic.extend(new_items)
-                    seen_links.update(it.get("link") for it in new_items)
-                    # 命中即停：翻页过程中找到目标域名，立即停止
-                    if _find_hit(organic)[0]:
-                        break
-                    page += 1
 
         return _build_result(organic)
 
