@@ -19,6 +19,22 @@
 - `rank.db`（你的排名数据）同样被忽略，不会上传。
 - **切勿**把含真实 Key 的 `config.json` 提交到 git 或粘贴到公开场合。
 
+### 桌面版 exe 的数据存在哪里？
+
+桌面版（`GoogleRankTracker.exe` / `GoogleRankTrackerDesktop.exe`）不会把配置写在 exe 旁边，而是写到当前 Windows 用户的数据目录：
+
+```text
+%APPDATA%\GoogleRankTracker\
+├── config.json
+├── rank.db
+└── check.log
+```
+
+这样做的好处：
+- 分发 exe 给别人时，不会把你的 API Key 和排名数据一起带过去；
+- 同一台电脑上多个 Windows 用户各自有独立配置；
+- 移动或重命名 exe 不会丢失自己的配置。
+
 ## 从源码运行（开发者 / 贡献者）
 
 ```bash

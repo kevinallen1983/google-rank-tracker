@@ -8,9 +8,19 @@ import sys
 
 
 def app_dir():
+    """返回程序可写数据目录。
+
+    - 开发态：源码所在目录（保持向后兼容）。
+    - PyInstaller 打包态：Windows 用 %APPDATA%/GoogleRankTracker；其它系统 fallback 到用户主目录。
+      不把 config.json / rank.db 放在 exe 同级目录，避免分发 exe 时泄露或读取他人配置。
+    """
     if getattr(sys, "frozen", False):
-        return os.path.dirname(sys.executable)
-    return os.path.dirname(os.path.abspath(__file__))
+        base = os.environ.get("APPDATA") or os.path.expanduser("~")
+        d = os.path.join(base, "GoogleRankTracker")
+    else:
+        d = os.path.dirname(os.path.abspath(__file__))
+    os.makedirs(d, exist_ok=True)
+    return d
 
 
 def resource_dir(subdir=""):
