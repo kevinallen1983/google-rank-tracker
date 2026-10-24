@@ -146,6 +146,12 @@
         <option value="5" selected>前 5 页（约前 50 名）</option>
         <option value="10">前 10 页（约前 100 名）</option>
       </select>
+      <label>默认查询设备（查询时的「默认设备」选项会沿用这里）</label>
+      <select id="device_cfg">
+        <option value="default" selected>不指定（跟随 SERP 默认）</option>
+        <option value="desktop">电脑端</option>
+        <option value="mobile">移动端</option>
+      </select>
       <div class="hint" id="creditsHint" style="color:#c2410c">SerpBase / Serper 都是每翻 1 页扣 1 积分；前 10 页 ≈ 每个关键词扣 10 积分。</div>
       <div class="toolbar" style="margin-top:16px">
         <button class="btn-primary" onclick="saveConfig()">保存配置</button>
@@ -169,6 +175,11 @@
   <div class="card">
     <h2>立即检查</h2>
     <div class="toolbar">
+      <select id="device" title="查询设备：电脑端 / 移动端">
+        <option value="default" selected>默认设备</option>
+        <option value="desktop">电脑端</option>
+        <option value="mobile">移动端</option>
+      </select>
       <button class="btn-primary" id="checkBtn" onclick="runCheck()">立即检查全部</button>
       <button class="btn-ghost" onclick="loadDemo()">生成演示数据</button>
       <button class="btn-ghost btn-sm" onclick="clearDemo()">清空演示数据</button>
@@ -232,6 +243,7 @@ async function loadConfig(){
   $('gl').value = (c.serp&&c.serp.gl)||'us';
   $('hl').value = (c.serp&&c.serp.hl)||'en';
   $('max_pages').value = String((c.serp&&c.serp.max_pages)||5);
+  $('device_cfg').value = (c.serp&&c.serp.device)||'default';
   $('domBadge').textContent = c.domain||'未设置';
   onProviderChange();
 }
@@ -255,7 +267,8 @@ async function saveConfig(){
     domain:$('domain').value.trim(),
     provider:$('provider').value,
     gl:$('gl').value, hl:$('hl').value,
-    max_pages:parseInt($('max_pages').value,10)
+    max_pages:parseInt($('max_pages').value,10),
+    device:$('device_cfg').value
   };
   // 如果 key 输入框为空，就不发送 api_key，避免后端把已保存的 key 清空。
   if(apiKey){ body.api_key = apiKey; }
@@ -304,8 +317,9 @@ async function delKw(kw){
 async function runCheck(){
   const btn=$('checkBtn'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>检查中…';
   $('checkStatus').textContent='正在逐个查询谷歌排名，请稍候…'; $('checkStatus').className='status';
+  const device=$('device').value;
   try{
-    const r=await fetch('/api/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+    const r=await fetch('/api/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device})});
     const j=await r.json();
     if(!j.ok){ $('checkStatus').textContent='检查失败：'+(j.msg||'未知错误'); $('checkStatus').className='status err'; }
     else{
@@ -323,8 +337,9 @@ async function runCheck(){
 async function checkSingleKw(kw, btn){
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
   const s=$('singleStatus'); s.textContent='正在查「'+kw+'」…'; s.className='status';
+  const device=$('device').value;
   try{
-    const r=await fetch('/api/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keyword:kw})});
+    const r=await fetch('/api/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keyword:kw, device})});
     const j=await r.json();
     if(!j.ok){ s.textContent='「'+kw+'」检查失败：'+(j.msg||'未知错误'); s.className='status err'; }
     else{

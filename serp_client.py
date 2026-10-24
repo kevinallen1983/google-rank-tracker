@@ -223,13 +223,15 @@ def _get_provider(cfg, name=None):
     return cls(cfg)
 
 
-def check_rank(keyword, domain=None, provider=None, max_results=100, max_pages=None):
+def check_rank(keyword, domain=None, provider=None, max_results=100, max_pages=None, device=None):
     """查询 keyword 在指定 domain 的排名。
 
     参数：
       max_results: 最多检查多少条结果（向后兼容）
       max_pages: 用户选择的"前 N 页"；优先用此值控制 Serper/SerpBase 的实际请求页数。
                  若未传，则按 max_results 折算（每页约 10 条）。
+      device: 设备类型，"desktop"（电脑端）/"mobile"（移动端）/"default"（按全局配置）。
+              传入后会覆盖 config 中的 serp.device，实现单关键词/单次查询单独指定设备。
 
     返回 dict：
     {
@@ -248,6 +250,9 @@ def check_rank(keyword, domain=None, provider=None, max_results=100, max_pages=N
         max_pages = max(1, (max_results + 9) // 10)
 
     cfg = _load_config()
+    # 单查询设备覆盖：传入的 device 优先生效，避免改动全局配置
+    if device and device != "default":
+        cfg.setdefault("serp", {})["device"] = device
     domain = domain or cfg.get("domain", "")
     target = _normalize_domain(domain)
 

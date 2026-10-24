@@ -188,6 +188,7 @@ def api_check():
 
     data = request.get_json(silent=True) or {}
     keyword_filter = data.get("keyword")
+    device = data.get("device")
 
     rank_db.init_db()
     rank_db.seed_keywords(cfg.get("keywords", []))
@@ -207,6 +208,7 @@ def api_check():
                 provider=provider,
                 max_results=max_pages * 10,
                 max_pages=max_pages,
+                device=device,
             )
             pos = res.get("rank")
             url = res.get("found_url")
