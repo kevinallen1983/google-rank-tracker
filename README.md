@@ -35,6 +35,19 @@
 - 同一台电脑上多个 Windows 用户各自有独立配置；
 - 移动或重命名 exe 不会丢失自己的配置。
 
+## 只分发 exe 给别人用（无需源码）
+
+你可以直接把 GitHub Release 里的 `GoogleRankTracker.exe`（浏览器版）或 `GoogleRankTrackerDesktop.exe`（桌面窗口版）发给任何人，对方**双击即用，不用装 Python、不用拉源码**。
+
+- **完全不含你的隐私**：exe 里只打包了程序与网页模板，你的 API Key、域名、关键词、排名历史都只存在你本机 `%APPDATA%\GoogleRankTracker\`，不会打进 exe。对方拿到的是一份干净的空配置。
+- **对方需自备 SERP API Key**：第一次运行后，对方必须在看板「基础配置」里填入**他自己的** SerpBase 或 Serper Key（注册即送免费额度），否则查不了排名。
+- **两个版本任选**：
+  - 浏览器版 `GoogleRankTracker.exe`：自动打开系统浏览器访问 `http://127.0.0.1:5000`；
+  - 桌面窗口版 `GoogleRankTrackerDesktop.exe`：弹出原生窗口（需 Edge WebView2，缺失时自动回退用浏览器打开）。
+- **首次可能被 SmartScreen 拦截**：exe 未做代码签名，Windows 可能提示「已保护你的电脑」，点「详细信息 → 仍要运行」即可，属正常现象。
+
+---
+
 ## 从源码运行（开发者 / 贡献者）
 
 ```bash
