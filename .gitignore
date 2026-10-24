@@ -17,9 +17,13 @@ dist_icon/
 # 你的 SerpBase / Serper API Key、域名、关键词只存在本地的 config.json，已被忽略。
 # 仓库只保留 config.example.json（不含任何密钥）。
 config.json
+config.json.bak*
+*.bak
 rank.db
 *.db
 *.db.bak
+# 杂项零碎（nul 为重定向残留，绝不入库）
+nul
 
 # ===== 日志 =====
 *.log

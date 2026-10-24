@@ -243,9 +243,22 @@ async function loadConfig(){
   $('gl').value = (c.serp&&c.serp.gl)||'us';
   $('hl').value = (c.serp&&c.serp.hl)||'en';
   $('max_pages').value = String((c.serp&&c.serp.max_pages)||5);
-  $('device_cfg').value = (c.serp&&c.serp.device)||'default';
+  const dev = (c.serp&&c.serp.device)||'default';
+  $('device_cfg').value = dev;
+  updateDefaultDeviceLabel(dev);
+  // 同步「立即检查」下拉框的选中值，让它能直接显示基础配置里设定的默认设备
+  $('device').value = dev;
   $('domBadge').textContent = c.domain||'未设置';
   onProviderChange();
+}
+
+function updateDefaultDeviceLabel(cfgDevice){
+  // 让「立即检查」里的「默认设备」选项显示它实际会沿用哪个设备，避免歧义：
+  // 关键词检查 / 立即检查全部 在设备下拉为「默认设备」时，都会回退到基础配置的默认设备。
+  const sel = $('device'); if(!sel) return;
+  const map = {default:'跟随 SERP 默认', desktop:'电脑端', mobile:'移动端'};
+  const txt = map[cfgDevice]||'跟随 SERP 默认';
+  for(const opt of sel.options){ if(opt.value==='default'){ opt.textContent='默认设备（'+txt+'）'; break; } }
 }
 
 async function onProviderChange(){
@@ -275,7 +288,10 @@ async function saveConfig(){
   const r = await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   const j = await r.json();
   if(j.ok){ $('cfgStatus').textContent='配置已保存。'; $('cfgStatus').className='status';
-    $('domBadge').textContent=body.domain||'未设置'; }
+    $('domBadge').textContent=body.domain||'未设置';
+    updateDefaultDeviceLabel($('device_cfg').value);
+    // 保存后把「立即检查」下拉框的选中值也同步成刚保存的默认设备
+    $('device').value = $('device_cfg').value; }
   else { $('cfgStatus').textContent='保存失败：'+(j.msg||''); $('cfgStatus').className='status err'; }
 }
 
